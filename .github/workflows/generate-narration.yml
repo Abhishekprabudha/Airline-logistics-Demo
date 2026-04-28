@@ -1,1 +1,22 @@
-
+name: Generate narration audio
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - assets/narration.txt
+      - scripts/generate_narration.py
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak
+      - run: pip install edge-tts || true
+      - run: python scripts/generate_narration.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/demo-narration.mp3
+          git diff --cached --quiet || git commit -m "chore: generate narration" && git push || true
