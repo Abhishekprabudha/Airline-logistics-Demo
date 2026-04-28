@@ -30,19 +30,30 @@ function toDirectDriveUrl(raw) {
 }
 
 const driveSources = window.DRIVE_VIDEO_SOURCES || {};
-const scenes = sceneCatalog.map((scene) => ({
-  ...scene,
-  file: toDirectDriveUrl(driveSources[scene.key]) || scene.fallback
-}));
+const scenes = sceneCatalog.map((scene) => {
+  const configured = toDirectDriveUrl(driveSources[scene.key]);
+  return {
+    ...scene,
+    file: configured
+  };
+});
+
+const missingConfiguredPaths = scenes.filter((scene) => !scene.file).map((scene) => scene.key);
+if (missingConfiguredPaths.length) {
+  console.error(
+    'Missing video path(s) in videos.config.js for key(s):',
+    missingConfiguredPaths.join(', ')
+  );
+}
 
 const player=document.getElementById('player'); const narration=document.getElementById('narration');
 const title=document.getElementById('sceneTitle'); const text=document.getElementById('sceneText'); const kicker=document.getElementById('kicker'); const agent=document.getElementById('agentText'); const tl=document.getElementById('timeline');
 let idx=0, playing=false;
 scenes.forEach((s,i)=>{const row=document.createElement('div');row.className='scene';row.innerHTML=`<div class="dot"></div><div><strong>${String(i+1).padStart(2,'0')} ${s.title}</strong><small>${s.text}</small></div>`;tl.appendChild(row)});
-function render(){const s=scenes[idx]; player.src=s.file; player.playbackRate=s.speed; title.textContent=s.title; text.textContent=s.text; kicker.textContent=`Scene ${idx+1} / ${scenes.length}`; agent.textContent=s.agent; [...tl.children].forEach((e,i)=>e.classList.toggle('active',i===idx));}
-function next(){idx=(idx+1)%scenes.length; render(); if(playing) player.play().catch(()=>{});}
+function render(){const s=scenes[idx]; if(!s.file){player.removeAttribute('src'); player.load(); title.textContent=`${s.title} (missing video path)`;} else {player.src=s.file; title.textContent=s.title;} player.playbackRate=s.speed; text.textContent=s.text; kicker.textContent=`Scene ${idx+1} / ${scenes.length}`; agent.textContent=s.agent; [...tl.children].forEach((e,i)=>e.classList.toggle('active',i===idx));}
+function next(){idx=(idx+1)%scenes.length; render(); if(playing && scenes[idx].file) player.play().catch(()=>{});}
 player.addEventListener('ended', next); player.addEventListener('loadedmetadata',()=>{player.playbackRate=scenes[idx].speed});
-document.getElementById('playBtn').onclick=async()=>{playing=true; if(!player.src) render(); player.muted=true; await player.play().catch(()=>{}); narration.currentTime=0; narration.play().catch(()=>{});};
+document.getElementById('playBtn').onclick=async()=>{playing=true; if(!player.src) render(); if(!scenes[idx].file) return; player.muted=true; await player.play().catch(()=>{}); narration.currentTime=0; narration.play().catch(()=>{});};
 document.getElementById('pauseBtn').onclick=()=>{playing=false; player.pause(); narration.pause();};
-document.getElementById('restartBtn').onclick=()=>{idx=0; playing=true; render(); narration.currentTime=0; narration.play().catch(()=>{}); player.play().catch(()=>{});};
+document.getElementById('restartBtn').onclick=()=>{idx=0; playing=true; render(); if(!scenes[idx].file) return; narration.currentTime=0; narration.play().catch(()=>{}); player.play().catch(()=>{});};
 render();
