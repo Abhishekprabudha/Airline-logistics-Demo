@@ -27,7 +27,7 @@ The app automatically converts Drive sharing links like
 `https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing`
 into direct URLs that the HTML5 video player can read.
 If a Drive link fails at runtime, the player now automatically tries local fallback files in this order:
-`assets/originals/<scene_key>.mp4|webm|mov|m4v`, then `assets/<scene_key>.<ext>`.
+`assets/originals/<scene_key>.mp4|webm|mov|m4v`, then `assets/rendered/<scene_key>.<ext>`, then `assets/<scene_key>.<ext>`.
 
 ## Two-step render flow for large source videos (recommended)
 
@@ -73,6 +73,6 @@ The web version is the strongest first output because it preserves all uploaded 
 - GitHub does not allow very large binaries in normal git history (typically 100 MB per file), so large video sets should stay in Drive/CDN or use Git LFS/Releases artifacts.
 - Keep file names/scene keys unchanged in `videos.config.js`; only replace the URL values.
 - For best playback reliability, keep each Drive file in standard MP4/WebM formats.
-- `scripts/render_narrated_movie.sh` auto-picks each scene video from `assets/originals/` first, then `assets/`, checking `mp4`, `webm`, `mov`, and `m4v`.
+- `scripts/render_narrated_movie.sh` auto-picks each scene video from `assets/originals/` first, then `assets/`, checking `mp4`, `webm`, `mov`, and `m4v` (web player fallback now also checks `assets/rendered/` by scene key).
 - You can override sync behavior with `DEST_DIR`, `VIDEO_EXT`, and `FORCE_DOWNLOAD=1` when running `scripts/sync_drive_videos.sh`.
 - You can override render inputs/outputs with environment variables: `NARRATION_AUDIO` and `OUTPUT_VIDEO`.

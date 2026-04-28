@@ -125,6 +125,7 @@ function buildSceneSourceCandidates(sceneKey) {
   const drive = toDirectDriveUrl(driveSources[sceneKey]);
   const localCandidates = localFallbackExtensions.flatMap((ext) => ([
     `assets/originals/${sceneKey}.${ext}`,
+    `assets/rendered/${sceneKey}.${ext}`,
     `assets/${sceneKey}.${ext}`
   ]));
 
