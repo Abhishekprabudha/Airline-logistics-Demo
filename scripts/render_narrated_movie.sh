@@ -135,8 +135,7 @@ PY
 
 INPUT_ARGS=()
 FILTER_LINES=()
-OFFSET_EXPR=""
-TOTAL_OFFSET="0"
+TOTAL_OFFSET="0.0"
 
 for i in "${!SCENE_SOURCES[@]}"; do
   source="${SCENE_SOURCES[$i]}"
@@ -156,12 +155,22 @@ PY
   )
 
   if [[ "$i" -eq 0 ]]; then
-    OFFSET_EXPR="$target_scaled-$CROSSFADE_SECONDS"
     TOTAL_OFFSET="$target_scaled"
   else
-    FILTER_LINES+=("[vxf$((i-1))][v$i]xfade=transition=fade:duration=${CROSSFADE_SECONDS}:offset=${OFFSET_EXPR}[vxf$i]")
-    OFFSET_EXPR="${TOTAL_OFFSET}+${target_scaled}-${CROSSFADE_SECONDS}*${i}"
-    TOTAL_OFFSET="${TOTAL_OFFSET}+${target_scaled}"
+    xfade_offset="$(python3 - <<PY
+total=float("${TOTAL_OFFSET}")
+cross=float("${CROSSFADE_SECONDS}")
+print(max(0.0, total - cross))
+PY
+)"
+    FILTER_LINES+=("[vxf$((i-1))][v$i]xfade=transition=fade:duration=${CROSSFADE_SECONDS}:offset=${xfade_offset}[vxf$i]")
+    TOTAL_OFFSET="$(python3 - <<PY
+total=float("${TOTAL_OFFSET}")
+duration=float("${target_scaled}")
+cross=float("${CROSSFADE_SECONDS}")
+print(total + duration - cross)
+PY
+)"
   fi
 
 done
