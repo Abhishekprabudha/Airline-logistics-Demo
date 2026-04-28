@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Airline Logistics AI Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">AI Airline Logistics Intelligence</p>
+      <h1>The Invisible Airline Nervous System</h1>
+      <p class="subhead">A cinematic demo sequencing cargo, baggage, workforce safety, damage detection, Gen BI control and dynamic cargo pricing into one spellbinding operational story.</p>
+      <div class="actions">
+        <button id="playBtn">Play cinematic sequence</button>
+        <button id="pauseBtn" class="secondary">Pause</button>
+        <button id="restartBtn" class="secondary">Restart</button>
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="videoWrap">
+        <video id="player" playsinline preload="metadata" muted></video>
+        <div class="vignette"></div>
+        <div class="overlay">
+          <div id="kicker">Scene 1</div>
+          <h2 id="sceneTitle">Every flight hides an invisible operation</h2>
+          <p id="sceneText">Cargo, baggage, people, safety and SLA clocks are all moving together under pressure.</p>
+        </div>
+      </div>
+      <aside class="panel">
+        <h3>Live Story Arc</h3>
+        <div id="timeline"></div>
+        <div class="agentBox">
+          <span>Gen BI Agent</span>
+          <p id="agentText">Ready to answer: What is at risk, why is it happening, and what action protects the SLA?</p>
+        </div>
+      </aside>
+    </section>
+
+    <audio id="narration" src="assets/demo-narration.mp3" preload="auto"></audio>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
