@@ -1,0 +1,24 @@
+name: Sync Drive Videos
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - videos.config.js
+      - scripts/sync_drive_videos.sh
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: bash scripts/sync_drive_videos.sh
+      - run: |
+          echo "Contents of assets/originals after sync:"
+          find assets/originals -maxdepth 1 -type f | sed 's#^#  - #'
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/originals
+          git diff --cached --quiet || git commit -m "chore: sync drive videos" && git push || true
