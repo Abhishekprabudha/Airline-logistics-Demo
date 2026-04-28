@@ -4,7 +4,6 @@ set -euo pipefail
 DEST_DIR="${DEST_DIR:-assets/originals}"
 VIDEO_EXT="${VIDEO_EXT:-mp4}"
 FORCE_DOWNLOAD="${FORCE_DOWNLOAD:-0}"
-VALIDATE_WITH_FFPROBE="${VALIDATE_WITH_FFPROBE:-1}"
 
 SCENE_KEYS=(
   non_ideal_box_flow
@@ -75,16 +74,6 @@ for i in "${!SCENE_KEYS[@]}"; do
 
   echo "Downloading ${key} -> ${destination}"
   curl -fL --retry 4 --retry-delay 2 --retry-all-errors "$source" -o "$destination"
-
-  if [[ "$VALIDATE_WITH_FFPROBE" == "1" ]] && command -v ffprobe >/dev/null 2>&1; then
-    if ! ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$destination" >/dev/null; then
-      echo "Error: downloaded file is not a valid video stream: $destination" >&2
-      echo "Tip: verify Drive sharing permissions are 'Anyone with the link (Viewer)'." >&2
-      exit 1
-    fi
-  fi
 done
 
 echo "Drive video sync complete in ${DEST_DIR}"
-echo "Synced files:"
-find "$DEST_DIR" -maxdepth 1 -type f | sed 's#^#  - #'

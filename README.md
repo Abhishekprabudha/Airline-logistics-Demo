@@ -44,17 +44,6 @@ When videos are too large to keep in git, render in two steps:
 
 This avoids remote-stream instability during FFmpeg render and guarantees the narration is aligned against local scene files.
 
-### GitHub Actions buttons
-
-You should now see **two separate Run workflow buttons** in GitHub Actions:
-
-1. **Sync Drive Videos** — downloads scene videos from `videos.config.js` into `assets/originals/`.
-2. **Render narrated MP4** — builds `assets/rendered/airline-logistics-ai-demo-narrated.mp4` from local scene files + narration audio.
-
-After **Sync Drive Videos** completes successfully, you should see files like:
-`assets/originals/non_ideal_box_flow.mp4`, `assets/originals/non_ideal_baggage_flow.mp4`, etc.
-(`assets/originals`, not `assets/orginals`).
-
 ## Recommended way to present
 
 1. Upload this folder to a GitHub repository.
