@@ -54,3 +54,5 @@ The web version is the strongest first output because it preserves all uploaded 
 - If a Google Drive URL is blank for a scene, the player falls back to local repo paths (`assets/originals/...`) for that scene.
 - Keep file names/scene keys unchanged in `videos.config.js`; only replace the URL values.
 - For best playback reliability, keep each Drive file in standard MP4/WebM formats.
+- `scripts/render_narrated_movie.sh` defaults to `assets/originals/airline_logistics_system.webm`, but will auto-pick an available video from `assets/originals/` when that file is missing.
+- You can override render inputs/outputs with environment variables: `SOURCE_VIDEO`, `NARRATION_AUDIO`, and `OUTPUT_VIDEO`.
