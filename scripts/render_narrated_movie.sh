@@ -121,6 +121,14 @@ for i in "${!SCENE_KEYS[@]}"; do
   printf '      source: %s\n' "${SCENE_SOURCES[$i]}"
 done
 
+echo "Source diagnostics (codec, fps, time_base, pixel format):"
+for i in "${!SCENE_SOURCES[@]}"; do
+  diag="$(ffprobe -v error -select_streams v:0 \
+    -show_entries stream=codec_name,r_frame_rate,time_base,pix_fmt,width,height \
+    -of default=noprint_wrappers=1:nokey=1 "${SCENE_SOURCES[$i]}" | tr '\n' ' ' || true)"
+  printf '  %02d. %s -> %s\n' "$((i + 1))" "${SCENE_KEYS[$i]}" "${diag:-unavailable}"
+done
+
 NARRATION_DURATION="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$NARRATION_AUDIO")"
 TOTAL_VISUAL_SECONDS=0
 for s in "${SECTION_SECONDS[@]}"; do
@@ -159,7 +167,7 @@ PY
 
   safe_title="${SCENE_NAMES[$i]//:/ -}"
   FILTER_LINES+=(
-    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,trim=duration=${target_scaled},setpts=PTS-STARTPTS,format=yuv420p,drawtext=text='${safe_title}':x=60:y=h-110:fontsize=38:fontcolor=white:box=1:boxcolor=black@0.45:boxborderw=14[v$i]"
+    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p,drawtext=text='${safe_title}':x=60:y=h-110:fontsize=38:fontcolor=white:box=1:boxcolor=black@0.45:boxborderw=14[v$i]"
   )
 
   if [[ "$i" -eq 0 ]]; then
@@ -194,6 +202,8 @@ else
 fi
 
 FILTER_COMPLEX="$(printf '%s;' "${FILTER_LINES[@]}")${VIDEO_LABEL}fps=${TARGET_FPS},format=yuv420p[vout]"
+echo "Resolved filter graph:"
+echo "$FILTER_COMPLEX"
 
 ffmpeg -y \
   "${INPUT_ARGS[@]}" \
