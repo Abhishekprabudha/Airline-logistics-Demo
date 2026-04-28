@@ -147,7 +147,15 @@ print(max(4.0, base*scale))
 PY
 )"
 
-  INPUT_ARGS+=(-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss "$trim_start" -i "$source")
+  INPUT_ARGS+=(
+    -reconnect 1
+    -reconnect_streamed 1
+    -reconnect_delay_max 5
+    -analyzeduration 100M
+    -probesize 100M
+    -ss "$trim_start"
+    -i "$source"
+  )
 
   safe_title="${SCENE_NAMES[$i]//:/ -}"
   FILTER_LINES+=(
@@ -157,13 +165,17 @@ PY
   if [[ "$i" -eq 0 ]]; then
     TOTAL_OFFSET="$target_scaled"
   else
+    prev_label="vxf$((i-1))"
+    if [[ "$i" -eq 1 ]]; then
+      prev_label="v0"
+    fi
     xfade_offset="$(python3 - <<PY
 total=float("${TOTAL_OFFSET}")
 cross=float("${CROSSFADE_SECONDS}")
 print(max(0.0, total - cross))
 PY
 )"
-    FILTER_LINES+=("[vxf$((i-1))][v$i]xfade=transition=fade:duration=${CROSSFADE_SECONDS}:offset=${xfade_offset}[vxf$i]")
+    FILTER_LINES+=("[${prev_label}][v$i]xfade=transition=fade:duration=${CROSSFADE_SECONDS}:offset=${xfade_offset}[vxf$i]")
     TOTAL_OFFSET="$(python3 - <<PY
 total=float("${TOTAL_OFFSET}")
 duration=float("${target_scaled}")
