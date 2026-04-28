@@ -1,6 +1,11 @@
 name: Render narrated MP4
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Sync Drive Videos
+    types:
+      - completed
   push:
     paths:
       - assets/originals/**
@@ -12,6 +17,7 @@ permissions:
   contents: write
 jobs:
   render:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
