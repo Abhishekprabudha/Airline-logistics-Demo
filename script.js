@@ -119,15 +119,22 @@ function toDirectDriveUrl(raw) {
 }
 
 const driveSources = window.DRIVE_VIDEO_SOURCES || {};
+const localFallbackExtensions = ['mp4', 'webm', 'mov', 'm4v'];
+
+function buildSceneSourceCandidates(sceneKey) {
+  const drive = toDirectDriveUrl(driveSources[sceneKey]);
+  const localCandidates = localFallbackExtensions.flatMap((ext) => ([
+    `assets/originals/${sceneKey}.${ext}`,
+    `assets/${sceneKey}.${ext}`
+  ]));
+
+  return [drive, ...localCandidates].filter(Boolean);
+}
+
 const scenes = sceneCatalog.map((scene) => ({
   ...scene,
-  file: toDirectDriveUrl(driveSources[scene.key])
+  sources: buildSceneSourceCandidates(scene.key)
 }));
-
-const missingConfiguredPaths = scenes.filter((scene) => !scene.file).map((scene) => scene.key);
-if (missingConfiguredPaths.length) {
-  console.error('Missing video path(s) in videos.config.js for key(s):', missingConfiguredPaths.join(', '));
-}
 
 console.info('Scene to videos.config.js key mapping:');
 scenes.forEach((scene, i) => {
@@ -146,6 +153,31 @@ let idx = 0;
 let playing = false;
 let cuePoints = [];
 let rafId = null;
+
+function loadSceneSource(scene, sourceIdx = 0) {
+  const candidate = scene.sources[sourceIdx];
+  if (!candidate) {
+    player.removeAttribute('src');
+    player.load();
+    title.textContent = `${scene.title} (video unavailable)`;
+    console.error(`No playable source found for scene key "${scene.key}".`);
+    return;
+  }
+
+  player.onerror = () => {
+    console.warn(`Source failed for "${scene.key}": ${candidate}`);
+    loadSceneSource(scene, sourceIdx + 1);
+  };
+
+  player.onloadedmetadata = () => {
+    if (scene.trimStart > 0 && Number.isFinite(player.duration) && player.duration > scene.trimStart) {
+      player.currentTime = scene.trimStart;
+    }
+    if (playing) player.play().catch(() => {});
+  };
+
+  player.src = candidate;
+}
 
 function buildTimeline() {
   tl.innerHTML = '';
@@ -185,20 +217,8 @@ function computeSceneCues(durationSeconds) {
 function setScene(targetIdx) {
   idx = Math.max(0, Math.min(targetIdx, scenes.length - 1));
   const s = scenes[idx];
-  if (!s.file) {
-    player.removeAttribute('src');
-    player.load();
-    title.textContent = `${s.title} (missing video path)`;
-  } else {
-    player.src = s.file;
-    player.playbackRate = s.speed;
-    player.onloadedmetadata = () => {
-      if (s.trimStart > 0 && Number.isFinite(player.duration) && player.duration > s.trimStart) {
-        player.currentTime = s.trimStart;
-      }
-      if (playing) player.play().catch(() => {});
-    };
-  }
+  loadSceneSource(s, 0);
+  player.playbackRate = s.speed;
 
   title.textContent = s.title;
   text.textContent = s.text;
@@ -218,7 +238,6 @@ function syncVisualToNarration() {
 }
 
 function startPlayback(fromStart = false) {
-  if (missingConfiguredPaths.length) return;
   playing = true;
 
   if (fromStart) narration.currentTime = 0;

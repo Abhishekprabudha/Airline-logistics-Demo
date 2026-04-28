@@ -26,6 +26,23 @@ A GitHub Pages-ready cinematic demo for an Airline Logistics Intelligence System
 The app automatically converts Drive sharing links like
 `https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing`
 into direct URLs that the HTML5 video player can read.
+If a Drive link fails at runtime, the player now automatically tries local fallback files in this order:
+`assets/originals/<scene_key>.mp4|webm|mov|m4v`, then `assets/<scene_key>.<ext>`.
+
+## Two-step render flow for large source videos (recommended)
+
+When videos are too large to keep in git, render in two steps:
+
+1. **Sync all scene videos from Drive to local assets**
+   ```bash
+   bash scripts/sync_drive_videos.sh
+   ```
+2. **Render narrated MP4 using local copies + narration MP3**
+   ```bash
+   bash scripts/render_narrated_movie.sh
+   ```
+
+This avoids remote-stream instability during FFmpeg render and guarantees the narration is aligned against local scene files.
 
 ## Recommended way to present
 
@@ -51,10 +68,11 @@ The web version is the strongest first output because it preserves all uploaded 
 
 ## Notes
 
-- If a Google Drive URL is blank for a scene, the player falls back to local repo paths (`assets/originals/...`) for that scene.
+- The browser cannot enumerate an entire Google Drive folder directly from static GitHub Pages code. You should map one URL per scene key in `videos.config.js` (or pre-download files into `assets/originals/` with exact scene-key filenames).
+- Use `scripts/sync_drive_videos.sh` before rendering so FFmpeg works from local files rather than live network URLs.
+- GitHub does not allow very large binaries in normal git history (typically 100 MB per file), so large video sets should stay in Drive/CDN or use Git LFS/Releases artifacts.
 - Keep file names/scene keys unchanged in `videos.config.js`; only replace the URL values.
 - For best playback reliability, keep each Drive file in standard MP4/WebM formats.
-- `scripts/render_narrated_movie.sh` defaults to `assets/originals/airline_logistics_system.webm`, but will auto-pick an available video from `assets/originals/` or `assets/` when that file is missing.
-- If `videos.config.js` contains `airline_logistics_system`, the render script can automatically use that URL (Drive share links are converted to direct download URLs).
-- You can override render inputs/outputs with environment variables: `SOURCE_VIDEO`, `NARRATION_AUDIO`, and `OUTPUT_VIDEO`.
-- If the source file appears after a delay (for example another step is still copying it), set `WAIT_FOR_SOURCE_SECONDS=30` (or another value) before running the render script.
+- `scripts/render_narrated_movie.sh` auto-picks each scene video from `assets/originals/` first, then `assets/`, checking `mp4`, `webm`, `mov`, and `m4v`.
+- You can override sync behavior with `DEST_DIR`, `VIDEO_EXT`, and `FORCE_DOWNLOAD=1` when running `scripts/sync_drive_videos.sh`.
+- You can override render inputs/outputs with environment variables: `NARRATION_AUDIO` and `OUTPUT_VIDEO`.

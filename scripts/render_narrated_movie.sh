@@ -62,63 +62,48 @@ TRIM_START_SECONDS=(
   0.10
 )
 
-if [[ ! -f videos.config.js ]]; then
-  echo "Error: videos.config.js not found." >&2
-  exit 1
-fi
-
 if [[ ! -f "$NARRATION_AUDIO" ]]; then
   echo "Error: narration audio not found: $NARRATION_AUDIO" >&2
   echo "Generate it with scripts/generate_narration.py or set NARRATION_AUDIO=/path/to/audio." >&2
   exit 1
 fi
 
-readarray -t SCENE_SOURCES < <(python3 - <<'PY'
-import re
-from pathlib import Path
+resolve_local_source() {
+  local key="$1"
+  local ext
+  for ext in mp4 webm mov m4v; do
+    if [[ -f "assets/originals/${key}.${ext}" ]]; then
+      echo "assets/originals/${key}.${ext}"
+      return 0
+    fi
+    if [[ -f "assets/${key}.${ext}" ]]; then
+      echo "assets/${key}.${ext}"
+      return 0
+    fi
+  done
+  return 1
+}
 
-keys = [
-  "non_ideal_box_flow",
-  "non_ideal_baggage_flow",
-  "non_ideal_people_flow",
-  "box_math_detection",
-  "baggage_math_detection",
-  "airline_logistics_system",
-  "dynamic_pricing",
-  "happy_box_flow",
-  "happy_baggage_flow",
-  "happy_people_flow",
-]
-text = Path("videos.config.js").read_text(encoding="utf-8")
-
-def to_direct(value: str) -> str:
-    v = value.strip()
-    path_match = re.search(r"/file/d/([^/]+)", v)
-    if path_match:
-        return f"https://drive.google.com/uc?export=download&id={path_match.group(1)}"
-    id_match = re.search(r"[?&]id=([^&]+)", v)
-    if id_match:
-        return f"https://drive.google.com/uc?export=download&id={id_match.group(1)}"
-    return v
-
-for key in keys:
-    m = re.search(rf"\b{re.escape(key)}\b\s*:\s*['\"]([^'\"]+)['\"]", text)
-    value = m.group(1).strip() if m else ""
-    if not value:
-        raise SystemExit(f"Missing videos.config.js value for key: {key}")
-    print(to_direct(value))
-PY
-)
+SCENE_SOURCES=()
+for key in "${SCENE_KEYS[@]}"; do
+  if source="$(resolve_local_source "$key")"; then
+    SCENE_SOURCES+=("$source")
+  else
+    echo "Error: missing local source for scene key '${key}'." >&2
+    echo "Run scripts/sync_drive_videos.sh first or place files in assets/originals/." >&2
+    exit 1
+  fi
+done
 
 if [[ "${#SCENE_SOURCES[@]}" -ne "${#SCENE_KEYS[@]}" ]]; then
   echo "Error: expected ${#SCENE_KEYS[@]} scene sources, got ${#SCENE_SOURCES[@]}." >&2
   exit 1
 fi
 
-echo "Scene -> videos.config.js mapping used by renderer:"
+echo "Scene -> local video mapping used by renderer:"
 for i in "${!SCENE_KEYS[@]}"; do
   printf '  %02d. %s -> %s\n' "$((i + 1))" "${SCENE_NAMES[$i]}" "${SCENE_KEYS[$i]}"
-  printf '      source: %s\n' "${SCENE_SOURCES[$i]}"
+  printf '      local source: %s\n' "${SCENE_SOURCES[$i]}"
 done
 
 echo "Source diagnostics (codec, fps, time_base, pixel format):"
@@ -156,11 +141,6 @@ PY
 )"
 
   INPUT_ARGS+=(
-    -reconnect 1
-    -reconnect_streamed 1
-    -reconnect_delay_max 5
-    -analyzeduration 100M
-    -probesize 100M
     -ss "$trim_start"
     -i "$source"
   )
