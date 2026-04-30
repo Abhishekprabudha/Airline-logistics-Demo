@@ -9,6 +9,22 @@ TARGET_WIDTH="${TARGET_WIDTH:-1280}"
 TARGET_HEIGHT="${TARGET_HEIGHT:-720}"
 TARGET_FPS="${TARGET_FPS:-24}"
 CROSSFADE_SECONDS="${CROSSFADE_SECONDS:-0.45}"
+PLAYBACK_SPEED="${PLAYBACK_SPEED:-0.5}"
+
+if ! python3 - <<PY
+speed=float("$PLAYBACK_SPEED")
+assert speed > 0
+PY
+then
+  echo "Error: PLAYBACK_SPEED must be a positive number. Got: $PLAYBACK_SPEED" >&2
+  exit 1
+fi
+
+PLAYBACK_PTS_FACTOR="$(python3 - <<PY
+speed=float("$PLAYBACK_SPEED")
+print(1.0/speed)
+PY
+)"
 
 SCENE_KEYS=(
   start_airline_departure
@@ -155,7 +171,7 @@ PY
   )
 
   FILTER_LINES+=(
-    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,tpad=stop_mode=clone:stop_duration=600,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p[v$i]"
+    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,tpad=stop_mode=clone:stop_duration=600,setpts=${PLAYBACK_PTS_FACTOR}*PTS,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p[v$i]"
   )
 
   if [[ "$i" -eq 0 ]]; then
