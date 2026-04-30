@@ -147,7 +147,7 @@ PY
 
   safe_title="${SCENE_NAMES[$i]//:/ -}"
   FILTER_LINES+=(
-    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p,drawtext=text='${safe_title}':x=60:y=h-110:fontsize=38:fontcolor=white:box=1:boxcolor=black@0.45:boxborderw=14[v$i]"
+    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,tpad=stop_mode=clone:stop_duration=600,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p,drawtext=text='${safe_title}':x=60:y=h-110:fontsize=38:fontcolor=white:box=1:boxcolor=black@0.45:boxborderw=14[v$i]"
   )
 
   if [[ "$i" -eq 0 ]]; then
@@ -191,7 +191,7 @@ ffmpeg -y \
   -filter_complex "$FILTER_COMPLEX" \
   -map '[vout]' -map "$(( ${#SCENE_SOURCES[@]} )):a:0" \
   -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p \
-  -c:a aac -b:a 160k -shortest \
+  -c:a aac -b:a 160k -t "$NARRATION_DURATION" \
   "$OUTPUT_VIDEO"
 
 echo "Rendered narrated film: $OUTPUT_VIDEO"
