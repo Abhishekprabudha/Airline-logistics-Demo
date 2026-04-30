@@ -11,6 +11,7 @@ TARGET_FPS="${TARGET_FPS:-24}"
 CROSSFADE_SECONDS="${CROSSFADE_SECONDS:-0.45}"
 
 SCENE_KEYS=(
+  start_airline_departure
   non_ideal_box_flow
   non_ideal_baggage_flow
   non_ideal_people_flow
@@ -24,6 +25,7 @@ SCENE_KEYS=(
 )
 
 SCENE_NAMES=(
+  "Start - airline departure"
   "Opening risk - non ideal box flow"
   "Opening risk - non ideal baggage flow"
   "Opening risk - non ideal people flow"
@@ -37,6 +39,7 @@ SCENE_NAMES=(
 )
 
 SECTION_SECONDS=(
+  10
   13
   13
   13
@@ -50,6 +53,7 @@ SECTION_SECONDS=(
 )
 
 TRIM_START_SECONDS=(
+  0.00
   0.25
   0.20
   0.15
@@ -71,6 +75,11 @@ fi
 resolve_local_source() {
   local key="$1"
   local ext
+
+  if [[ "$key" == "start_airline_departure" && -f "assets/originals/Start Airline departure.mp4" ]]; then
+    echo "assets/originals/Start Airline departure.mp4"
+    return 0
+  fi
   for ext in mp4 webm mov m4v; do
     if [[ -f "assets/originals/${key}.${ext}" ]]; then
       echo "assets/originals/${key}.${ext}"
@@ -145,9 +154,8 @@ PY
     -i "$source"
   )
 
-  safe_title="${SCENE_NAMES[$i]//:/ -}"
   FILTER_LINES+=(
-    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,tpad=stop_mode=clone:stop_duration=600,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p,drawtext=text='${safe_title}':x=60:y=h-110:fontsize=38:fontcolor=white:box=1:boxcolor=black@0.45:boxborderw=14[v$i]"
+    "[$i:v]scale=${TARGET_WIDTH}:${TARGET_HEIGHT}:force_original_aspect_ratio=decrease,pad=${TARGET_WIDTH}:${TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,tpad=stop_mode=clone:stop_duration=600,trim=duration=${target_scaled},setpts=PTS-STARTPTS,fps=${TARGET_FPS},settb=AVTB,format=yuv420p[v$i]"
   )
 
   if [[ "$i" -eq 0 ]]; then
